@@ -1,0 +1,162 @@
+# StarSling - 3 Deployment: gateway, simulation, worldsvc
+
+# --- Gateway Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-gateway
+  labels:
+    app: {{ .Release.Name }}
+    component: gateway
+spec:
+  replicas: {{ .Values.gateway.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      component: gateway
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        component: gateway
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: gateway
+          image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag }}"
+          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $value := .Values.secretEnv }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-secrets
+                  key: {{ $key }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.gateway.resources | nindent 12 }}
+
+---
+# --- Simulation Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-simulation
+  labels:
+    app: {{ .Release.Name }}
+    component: simulation
+spec:
+  replicas: {{ .Values.simulation.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      component: simulation
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        component: simulation
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: simulation
+          image: "{{ .Values.simulation.image.repository }}:{{ .Values.simulation.image.tag }}"
+          imagePullPolicy: {{ .Values.simulation.image.pullPolicy }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $value := .Values.secretEnv }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-secrets
+                  key: {{ $key }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.simulation.resources | nindent 12 }}
+
+---
+# --- WorldSvc Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-worldsvc
+  labels:
+    app: {{ .Release.Name }}
+    component: worldsvc
+spec:
+  replicas: {{ .Values.worldsvc.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      component: worldsvc
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        component: worldsvc
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: worldsvc
+          image: "{{ .Values.worldsvc.image.repository }}:{{ .Values.worldsvc.image.tag }}"
+          imagePullPolicy: {{ .Values.worldsvc.image.pullPolicy }}
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $value := .Values.secretEnv }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-secrets
+                  key: {{ $key }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.worldsvc.resources | nindent 12 }}

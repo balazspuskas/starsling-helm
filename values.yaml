@@ -1,0 +1,91 @@
+# StarSling - 3 microservice: gateway, simulation, worldsvc
+
+# --- Gateway (WebSocket + GraphQL API) ---
+gateway:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/balazspuskas/starsling-gateway
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# --- Simulation (Tick engine) ---
+simulation:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/balazspuskas/starsling-simulation
+    tag: latest
+    pullPolicy: Always
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 200m
+      memory: 128Mi
+
+# --- World Service (Auth, Trade, Quest HTTP) ---
+worldsvc:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/balazspuskas/starsling-worldsvc
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8081
+  resources:
+    limits:
+      cpu: 300m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# --- Közös beállítások ---
+imagePullSecrets:
+  - name: ghcr-secret
+
+env:
+  DATABASE_URL: "postgres://devuser:devpassword@infrastructure-postgresql.infrastructure:5432/starsling?sslmode=disable"
+  REDIS_URL: "redis://infrastructure-redis-master.infrastructure:6379/0"
+  TICK_RATE: "20"
+  GATEWAY_PORT: "8080"
+  WORLDSVC_PORT: "8081"
+
+secretEnv:
+  JWT_SECRET: "change-me-in-production"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/websocket-services: "starsling-gateway"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  hosts:
+    - host: starsling.c4y.hu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+registrySecret:
+  create: true
+  dockerconfigjson: ""
+
+initDB:
+  enabled: true
+
+vault:
+  enabled: false

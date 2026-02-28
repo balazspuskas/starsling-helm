@@ -1,0 +1,153 @@
+{{- if .Values.initDB.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-init-db
+  labels:
+    app: {{ .Release.Name }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: init-db
+          image: docker.io/bitnami/postgresql:16
+          command:
+            - sh
+            - -c
+            - |
+              # StarSling adatbázis létrehozás
+              PGPASSWORD=devpassword psql -h infrastructure-postgresql.infrastructure -U devuser -d devdb -c "SELECT 1 FROM pg_database WHERE datname = 'starsling'" | grep -q 1 || \
+              PGPASSWORD=devpassword psql -h infrastructure-postgresql.infrastructure -U devuser -d devdb -c "CREATE DATABASE starsling"
+
+              # Migráció futtatás
+              PGPASSWORD=devpassword psql -h infrastructure-postgresql.infrastructure -U devuser -d starsling <<'EOSQL'
+
+              -- Játékosok
+              CREATE TABLE IF NOT EXISTS players (
+                  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  name        TEXT UNIQUE NOT NULL,
+                  pw_hash     TEXT NOT NULL,
+                  credits     BIGINT DEFAULT 1000,
+                  faction     TEXT DEFAULT 'independent',
+                  reputation  JSONB DEFAULT '{}',
+                  created_at  TIMESTAMPTZ DEFAULT now(),
+                  last_login  TIMESTAMPTZ DEFAULT now()
+              );
+
+              -- Hajók
+              CREATE TABLE IF NOT EXISTS ships (
+                  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  player_id   UUID NOT NULL REFERENCES players(id),
+                  name        TEXT NOT NULL,
+                  type        TEXT NOT NULL DEFAULT 'sidewinder',
+                  system_id   UUID NOT NULL,
+                  pos_x       DOUBLE PRECISION DEFAULT 0,
+                  pos_y       DOUBLE PRECISION DEFAULT 0,
+                  pos_z       DOUBLE PRECISION DEFAULT 0,
+                  vel_x       DOUBLE PRECISION DEFAULT 0,
+                  vel_y       DOUBLE PRECISION DEFAULT 0,
+                  vel_z       DOUBLE PRECISION DEFAULT 0,
+                  rot_y       DOUBLE PRECISION DEFAULT 0,
+                  hp          REAL DEFAULT 100,
+                  max_hp      REAL DEFAULT 100,
+                  shield      REAL DEFAULT 100,
+                  max_shield  REAL DEFAULT 100,
+                  heat        REAL DEFAULT 0,
+                  pips_sys    SMALLINT DEFAULT 2,
+                  pips_eng    SMALLINT DEFAULT 2,
+                  pips_wpn    SMALLINT DEFAULT 2,
+                  state       TEXT DEFAULT 'flying',
+                  cargo       JSONB DEFAULT '[]',
+                  modules     JSONB DEFAULT '{}',
+                  active      BOOLEAN DEFAULT true
+              );
+              CREATE INDEX IF NOT EXISTS idx_ships_player ON ships(player_id);
+              CREATE INDEX IF NOT EXISTS idx_ships_system ON ships(system_id);
+
+              -- Naprendszerek
+              CREATE TABLE IF NOT EXISTS star_systems (
+                  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  name        TEXT NOT NULL,
+                  seed        BIGINT NOT NULL,
+                  pos_x       DOUBLE PRECISION NOT NULL,
+                  pos_y       DOUBLE PRECISION DEFAULT 0,
+                  pos_z       DOUBLE PRECISION NOT NULL,
+                  system_type TEXT DEFAULT 'industrial'
+              );
+
+              -- Állomások
+              CREATE TABLE IF NOT EXISTS stations (
+                  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  system_id   UUID NOT NULL REFERENCES star_systems(id),
+                  name        TEXT NOT NULL,
+                  type        TEXT NOT NULL,
+                  faction     TEXT NOT NULL,
+                  pos_x       DOUBLE PRECISION NOT NULL,
+                  pos_y       DOUBLE PRECISION DEFAULT 0,
+                  pos_z       DOUBLE PRECISION NOT NULL,
+                  services    TEXT[] DEFAULT '{repair,refuel,trade}'
+              );
+              CREATE INDEX IF NOT EXISTS idx_stations_system ON stations(system_id);
+
+              -- Piaci árak
+              CREATE TABLE IF NOT EXISTS market (
+                  station_id  UUID NOT NULL REFERENCES stations(id),
+                  item        TEXT NOT NULL,
+                  buy_price   INTEGER NOT NULL,
+                  sell_price  INTEGER NOT NULL,
+                  supply      INTEGER NOT NULL DEFAULT 100,
+                  demand      INTEGER NOT NULL DEFAULT 100,
+                  base_price  INTEGER NOT NULL,
+                  PRIMARY KEY (station_id, item)
+              );
+
+              -- Trade napló
+              CREATE TABLE IF NOT EXISTS trade_log (
+                  id          BIGSERIAL PRIMARY KEY,
+                  player_id   UUID NOT NULL,
+                  station_id  UUID NOT NULL,
+                  item        TEXT NOT NULL,
+                  quantity    INTEGER NOT NULL,
+                  price       INTEGER NOT NULL,
+                  is_buy      BOOLEAN NOT NULL,
+                  created_at  TIMESTAMPTZ DEFAULT now()
+              );
+              CREATE INDEX IF NOT EXISTS idx_trade_log_time ON trade_log(created_at);
+
+              -- Combat napló
+              CREATE TABLE IF NOT EXISTS combat_log (
+                  id          BIGSERIAL PRIMARY KEY,
+                  attacker_id UUID,
+                  target_id   UUID,
+                  damage      REAL,
+                  weapon      TEXT,
+                  system_id   UUID,
+                  created_at  TIMESTAMPTZ DEFAULT now()
+              );
+
+              -- Küldetések
+              CREATE TABLE IF NOT EXISTS quests (
+                  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                  player_id   UUID REFERENCES players(id),
+                  type        TEXT NOT NULL,
+                  title       TEXT NOT NULL,
+                  description TEXT,
+                  reward_credits INTEGER DEFAULT 0,
+                  reward_rep  INTEGER DEFAULT 0,
+                  target_data JSONB NOT NULL,
+                  progress    REAL DEFAULT 0,
+                  status      TEXT DEFAULT 'active',
+                  expires_at  TIMESTAMPTZ,
+                  created_at  TIMESTAMPTZ DEFAULT now()
+              );
+              CREATE INDEX IF NOT EXISTS idx_quests_player ON quests(player_id) WHERE status = 'active';
+
+              EOSQL
+
+              echo "StarSling database initialized successfully"
+{{- end }}

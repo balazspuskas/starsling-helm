@@ -1,0 +1,40 @@
+# StarSling - Service-ek: gateway (külső), worldsvc (belső), simulation (nincs port)
+
+# --- Gateway Service (WebSocket + GraphQL) ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-gateway
+  labels:
+    app: {{ .Release.Name }}
+    component: gateway
+spec:
+  type: {{ .Values.gateway.service.type }}
+  ports:
+    - port: {{ .Values.gateway.service.port }}
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Release.Name }}
+    component: gateway
+
+---
+# --- WorldSvc Service (belső HTTP) ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-worldsvc
+  labels:
+    app: {{ .Release.Name }}
+    component: worldsvc
+spec:
+  type: {{ .Values.worldsvc.service.type }}
+  ports:
+    - port: {{ .Values.worldsvc.service.port }}
+      targetPort: 8081
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Release.Name }}
+    component: worldsvc
