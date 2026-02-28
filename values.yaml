@@ -51,6 +51,24 @@ worldsvc:
       cpu: 100m
       memory: 128Mi
 
+# --- Frontend (Three.js game client, statikus nginx) ---
+frontend:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/balazspuskas/starsling-frontend
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    limits:
+      cpu: 100m
+      memory: 64Mi
+    requests:
+      cpu: 50m
+      memory: 32Mi
+
 # --- Közös beállítások ---
 imagePullSecrets:
   - name: ghcr-secret
@@ -110,6 +128,21 @@ landing:
     requests:
       cpu: 50m
       memory: 32Mi
+
+frontendIngress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: play.starsling.c4y.hu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - play.starsling.c4y.hu
+      secretName: starsling-frontend-tls
 
 landingIngress:
   enabled: true
