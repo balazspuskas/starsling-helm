@@ -160,3 +160,50 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.worldsvc.resources | nindent 12 }}
+
+---
+# --- Landing Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-landing
+  labels:
+    app: {{ .Release.Name }}
+    component: landing
+spec:
+  replicas: {{ .Values.landing.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      component: landing
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        component: landing
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: landing
+          image: "{{ .Values.landing.image.repository }}:{{ .Values.landing.image.tag }}"
+          imagePullPolicy: {{ .Values.landing.image.pullPolicy }}
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.landing.resources | nindent 12 }}

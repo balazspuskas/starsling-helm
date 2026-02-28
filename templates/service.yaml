@@ -38,3 +38,23 @@ spec:
   selector:
     app: {{ .Release.Name }}
     component: worldsvc
+
+---
+# --- Landing Service (statikus nginx) ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-landing
+  labels:
+    app: {{ .Release.Name }}
+    component: landing
+spec:
+  type: {{ .Values.landing.service.type }}
+  ports:
+    - port: {{ .Values.landing.service.port }}
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Release.Name }}
+    component: landing

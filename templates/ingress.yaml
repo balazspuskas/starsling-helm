@@ -40,3 +40,48 @@ spec:
           {{- end }}
     {{- end }}
 {{- end }}
+
+---
+# --- Landing Ingress (NO websocket, plain HTTP) ---
+{{- if .Values.landingIngress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-landing
+  labels:
+    app: {{ .Release.Name }}
+    component: landing
+  {{- with .Values.landingIngress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.landingIngress.className }}
+  ingressClassName: {{ .Values.landingIngress.className }}
+  {{- end }}
+  {{- if .Values.landingIngress.tls }}
+  tls:
+    {{- range .Values.landingIngress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.landingIngress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $.Release.Name }}-landing
+                port:
+                  number: {{ $.Values.landing.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
