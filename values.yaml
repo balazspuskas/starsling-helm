@@ -88,7 +88,7 @@ registrySecret:
   create: false
 
 initDB:
-  enabled: true
+  enabled: false
 
 vault:
   enabled: false
