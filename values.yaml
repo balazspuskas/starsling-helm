@@ -85,8 +85,7 @@ ingress:
       secretName: starsling-tls
 
 registrySecret:
-  create: true
-  dockerconfigjson: "eyJhdXRocyI6eyJnaGNyLmlvIjp7InVzZXJuYW1lIjoicGFsYXpzcHVza2FzIiwicGFzc3dvcmQiOiJnaHBfNTJhYjR1YXRnYjZrQkJiSTZJNkxmNElyd2JMYTg2MTZiVmp1IiwiYXV0aCI6ImNHRnNZWHB6Y0hWemEyRnpPbWRvY0Y4MU1tRmlOSFZoZEdkaU5tdENRbUpKTmtrMlRHWTBTWEozWWt4aE9EWXhObUpXYW5VPSJ9fX0="
+  create: false
 
 initDB:
   enabled: true
