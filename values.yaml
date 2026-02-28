@@ -79,6 +79,7 @@ env:
   TICK_RATE: "20"
   GATEWAY_PORT: "8080"
   WORLDSVC_PORT: "8081"
+  DEBUG_API: "true"
 
 secretEnv:
   JWT_SECRET: "change-me-in-production"
@@ -92,6 +93,12 @@ ingress:
     nginx.ingress.kubernetes.io/websocket-services: "starsling-gateway"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/use-http2: "false"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_http_version 1.1;
   hosts:
     - host: backend.starsling.c4y.hu
       paths:
