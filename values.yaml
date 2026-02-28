@@ -18,22 +18,6 @@ gateway:
       cpu: 100m
       memory: 128Mi
 
-# --- Simulation (Tick engine) ---
-# KIKAPCSOLVA: a gateway futtatja a SimEngine-t
-simulation:
-  replicaCount: 0
-  image:
-    repository: ghcr.io/balazspuskas/starsling-simulation
-    tag: latest
-    pullPolicy: Always
-  resources:
-    limits:
-      cpu: 500m
-      memory: 256Mi
-    requests:
-      cpu: 200m
-      memory: 128Mi
-
 # --- World Service (Auth, Trade, Quest HTTP) ---
 worldsvc:
   replicaCount: 1
