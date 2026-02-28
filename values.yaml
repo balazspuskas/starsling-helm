@@ -69,6 +69,7 @@ ingress:
   enabled: true
   className: "nginx"
   annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/websocket-services: "starsling-gateway"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
@@ -78,11 +79,14 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  tls: []
+  tls:
+    - hosts:
+        - starsling.c4y.hu
+      secretName: starsling-tls
 
 registrySecret:
   create: true
-  dockerconfigjson: ""
+  dockerconfigjson: "eyJhdXRocyI6eyJnaGNyLmlvIjp7InVzZXJuYW1lIjoicGFsYXpzcHVza2FzIiwicGFzc3dvcmQiOiJnaHBfNTJhYjR1YXRnYjZrQkJiSTZJNkxmNElyd2JMYTg2MTZiVmp1IiwiYXV0aCI6ImNHRnNZWHB6Y0hWemEyRnpPbWRvY0Y4MU1tRmlOSFZoZEdkaU5tdENRbUpKTmtrMlRHWTBTWEozWWt4aE9EWXhObUpXYW5VPSJ9fX0="
 
 initDB:
   enabled: true
