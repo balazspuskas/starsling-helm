@@ -19,8 +19,9 @@ gateway:
       memory: 128Mi
 
 # --- Simulation (Tick engine) ---
+# KIKAPCSOLVA: a gateway futtatja a SimEngine-t
 simulation:
-  replicaCount: 1
+  replicaCount: 0
   image:
     repository: ghcr.io/balazspuskas/starsling-simulation
     tag: latest
