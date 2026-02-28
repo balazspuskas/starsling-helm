@@ -195,13 +195,13 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 80
             initialDelaySeconds: 5
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 80
             initialDelaySeconds: 3
             periodSeconds: 10
