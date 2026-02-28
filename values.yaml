@@ -75,14 +75,14 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
   hosts:
-    - host: starsling.c4y.hu
+    - host: backend.starsling.c4y.hu
       paths:
         - path: /
           pathType: Prefix
   tls:
     - hosts:
-        - starsling.c4y.hu
-      secretName: starsling-tls
+        - backend.starsling.c4y.hu
+      secretName: starsling-backend-tls
 
 registrySecret:
   create: false
